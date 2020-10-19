@@ -17,6 +17,7 @@ import warnings
 import six
 from dateutil.relativedelta import relativedelta
 
+
 class Pybbg():
     def __init__(self, host='localhost', port=8194):
         """
@@ -85,7 +86,6 @@ class Pybbg():
         request.set("startDate", start_date)
         request.set("endDate", end_date)
 
-
         if overrides is not None:
             overrideOuter = request.getElement('overrides')
             for k in overrides:
@@ -94,7 +94,7 @@ class Pybbg():
                 override1.setElement('value', overrides[k])
 
         if other_request_parameters is not None:
-            for k,v in six.iteritems(other_request_parameters):
+            for k, v in six.iteritems(other_request_parameters):
                 request.set(k, v)
 
         def adjust_date(to_adjust):
@@ -117,24 +117,26 @@ class Pybbg():
             # We provide timeout to give the chance for Ctrl+C handling:
             ev = self.session.nextEvent(500)
             for msg in ev:
-                ticker = msg.getElement('securityData').getElement('security').getValue()
-                fieldData = msg.getElement('securityData').getElement('fieldData')
+                ticker = msg.getElement('securityData').getElement(
+                    'security').getValue()
+                fieldData = msg.getElement(
+                    'securityData').getElement('fieldData')
                 for i in range(fieldData.numValues()):
                     for j in range(1, fieldData.getValue(i).numElements()):
                         dt = fieldData.getValue(i).getElement(0).getValue()
                         if move_dates_to_period_end:
                             dt = adjust_date(dt)
 
-                        data[(ticker, fld_list[j - 1])][dt] = fieldData.getValue(i).getElement(j).getValue()
+                        data[(ticker, fld_list[j - 1])
+                             ][dt] = fieldData.getValue(i).getElement(j).getValue()
 
             if ev.eventType() == blpapi.Event.RESPONSE:
                 # Response completly received, so we could exit
                 break
-
         if len(fld_list) == 1:
             data = {k[0]: v for k, v in data.items()}
             data = DataFrame(data)
-            data = data[ticker_list]
+            data = data[[ticker for ticker in ticker_list if ticker in data]]
             data.index = pd.to_datetime(data.index)
             return data
 
@@ -144,7 +146,8 @@ class Pybbg():
 
         data = DataFrame(data)
         data = data[ticker_list]
-        data.columns = pd.MultiIndex.from_tuples(data, names=['ticker', 'field'])
+        data.columns = pd.MultiIndex.from_tuples(
+            data, names=['ticker', 'field'])
         data.index = pd.to_datetime(data.index)
         return data
 
@@ -173,7 +176,8 @@ class Pybbg():
             # We provide timeout to give the chance for Ctrl+C handling:
             ev = self.session.nextEvent(500)
             for msg in ev:
-                barTickData = msg.getElement('barData').getElement('barTickData')
+                barTickData = msg.getElement(
+                    'barData').getElement('barTickData')
                 for i in range(barTickData.numValues()):
                     for j in range(len(fld_list)):
                         data[(fld_list[j])][barTickData.getValue(i).getElement(0).getValue()] = barTickData.getValue(
@@ -222,12 +226,15 @@ class Pybbg():
                 securityData = msg.getElement("securityData")
 
                 for i in range(securityData.numValues()):
-                    fieldData = securityData.getValue(i).getElement("fieldData")
-                    secId = securityData.getValue(i).getElement("security").getValue()
+                    fieldData = securityData.getValue(
+                        i).getElement("fieldData")
+                    secId = securityData.getValue(
+                        i).getElement("security").getValue()
                     data[secId] = dict()
                     for field in fld_list:
                         if fieldData.hasElement(field):
-                            data[secId][field] = fieldData.getElement(field).getValue()
+                            data[secId][field] = fieldData.getElement(
+                                field).getValue()
                         else:
                             data[secId][field] = np.NaN
 
@@ -256,7 +263,6 @@ class Pybbg():
     #     for f in fld_list:
     #         fields.appendValue(f)
 
-
     #     self.session.sendRequest(request)
     #     data = dict()
 
@@ -276,14 +282,11 @@ class Pybbg():
     #                     else:
     #                         data[secId][field] = np.NaN
 
-
-
     #         if ev.eventType() == blpapi.Event.RESPONSE:
     #             # Response completly received, so we could exit
     #             break
 
     #     return pd.DataFrame.from_dict(data)
-
 
     def bds(self, security, field, overrides=None):
 
@@ -317,7 +320,8 @@ class Pybbg():
                 # processMessage(msg)
                 securityData = msg.getElement("securityData")
                 for i in range(securityData.numValues()):
-                    fieldData = securityData.getValue(i).getElement("fieldData").getElement(field)
+                    fieldData = securityData.getValue(
+                        i).getElement("fieldData").getElement(field)
                     for i, row in enumerate(fieldData.values()):
                         for j in range(row.numElements()):
                             e = row.getElement(j)
@@ -362,4 +366,5 @@ def processMessage(msg):
             for i, row in enumerate(field.values()):
                 for j in range(row.numElements()):
                     e = row.getElement(j)
-                    print("Row %d col %d: %s %s" % (i, j, e.name(), e.getValue()))
+                    print("Row %d col %d: %s %s" %
+                          (i, j, e.name(), e.getValue()))
